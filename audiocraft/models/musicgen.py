@@ -252,8 +252,32 @@ class MusicGen:
             prompt_tokens = None
         return attributes, prompt_tokens
 
-    def _generate_tokens(self, attributes: tp.List[ConditioningAttributes],
-                         prompt_tokens: tp.Optional[torch.Tensor], progress: bool = False) -> torch.Tensor:
+    @torch.no_grad()
+    def _prepare_attributes(
+        self, wavs: torch.Tensor
+    ) -> tp.List[ConditioningAttributes]:
+        # ThomasLee
+        attributes = [
+            ConditioningAttributes(
+                text={"description": ""},
+                wav={
+                    "self_wav": WavCondition(
+                        wav,
+                        torch.tensor([wav.size(-1)], device=self.device),
+                        path="null_wav",
+                    )
+                },
+            )
+            for wav in wavs
+        ]
+        return attributes
+
+    def _generate_tokens(
+        self,
+        attributes: tp.List[ConditioningAttributes],
+        prompt_tokens: tp.Optional[torch.Tensor],
+        progress: bool = False,
+    ) -> torch.Tensor:
         """Generate discrete audio tokens given audio prompt and/or conditions.
 
         Args:
